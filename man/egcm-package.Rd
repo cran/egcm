@@ -64,9 +64,8 @@ decision. USE AT YOUR OWN RISK!
   \emph{Algorithmic trading: winning strategies and their rationale}.
   (Vol. 625). John Wiley & Sons.
 
-  Clegg, M. (2014).
-  On the Persistence of Cointegration in Pairs Trading,
-  \emph{in preparation}.
+  Clegg, M. (2014). On the Persistence of Cointegration in Pairs Trading (January 28, 2014). 
+  Available at SSRN:  http://ssrn.com/abstract=2491201
   
   Ehrman, D.S. (2006).
   \emph{The handbook of pairs trading: strategies using equities, options, 
@@ -115,7 +114,7 @@ cointegration tests implemented by Bernard Pfaff
 }
 \examples{
 \donttest{
-library(ttr)
+library(TTR)
 prices.spy <- getYahooData("SPY", 20130101, 20140101)$Close
 prices.voo <- getYahooData("VOO", 20130101, 20140101)$Close
 egcm(prices.spy, prices.voo)
@@ -131,3 +130,5 @@ print(e)
 plot(e)
 summary(e)
 }}
+\keyword{models}
+\keyword{ts}

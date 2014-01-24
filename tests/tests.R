@@ -84,14 +84,14 @@ egcm_tests <- function (include.inexact = FALSE) {
     }
     
     assert("length(egcm.urtests())", 11)
-    assert("egcm.default.urtest()", "pgff")
+    assert("egcm.default.urtest()", "pp")
     assert("egcm.set.default.urtest(\"adf\"); egcm.default.urtest()", 
         "adf")
     assert("egcm.set.default.urtest(\"pgff\"); egcm.default.urtest()", 
         "pgff")
 
     assert("length(egcm.i1tests())", 4)
-    assert("egcm.default.i1test()", "pgff")
+    assert("egcm.default.i1test()", "pp")
     assert("egcm.set.default.i1test(\"adf\"); egcm.default.i1test()", 
         "adf")
     assert("egcm.set.default.i1test(\"pgff\"); egcm.default.i1test()", 
@@ -127,6 +127,11 @@ test("egcm (1:100, (1:100)*2+3)",
 
 R[100] = -0.0000 (t = -0.089)")
          
+test("egcm (1:100, (1:100)*2+3, include.const=FALSE)",
+"Y[i] =   2.0448 X[i] +   0.0000 + R[i], R[i] =   1.0000 R[i-1] + eps[i], eps ~ N(0,  0.0000^2)
+        (0.0026)        (0.0000)                (0.0026)
+
+R[100] = -1.4776 (t = -1.137)")
 
 test("egcm(1:100, 1:100 + sin(1:100))",
 "Y[i] =   0.9988 X[i] +   0.0583 + R[i], R[i] =   0.5901 R[i-1] + eps[i], eps ~ N(0,  0.5957^2)

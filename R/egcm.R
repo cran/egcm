@@ -61,7 +61,7 @@
 # References
 #
 # Engle, R. F., & Granger, C. W. (1987). Co-integration and error correction: 
-#   representation, estimation, and testing. Econometrica, (55) 2, 251–276.
+#   representation, estimation, and testing. Econometrica, (55) 2, 251-276.
 # Pfaff, Bernhard (2008).  Analysis of Integrated and Cointegrated Time 
 #   Series with R.  Springer.
 
@@ -102,8 +102,8 @@ egcm.set.default.urtest <- function (urtest) {
 		stop ("No such unit root test: ", urtest)
 	}
     
-    if (urtest %in% c("jo-e", "jo-t", "ers-p", "ers-d", "sp-r")) require(urca)
-    if (urtest == "hurst") require(fArma)
+#    if (urtest %in% c("jo-e", "jo-t", "ers-p", "ers-d", "sp-r")) require(urca)
+#    if (urtest == "hurst") require(fArma)
 
 	urtests.list <<- c(urtest, setdiff(egcm.urtests.internal, urtest))
     assign("urtest.default", urtests.list, envir=egcm.env)
@@ -119,7 +119,7 @@ egcm.default.urtest <- function() {
     egcm.urtests()[1]
 }
 
-egcm.set.default.urtest("pp")
+# egcm.set.default.urtest("pp")
 
 # The following global variable enumerates the tests that are available for
 # checking if the input series are integrated.  The tests from the urca library
@@ -154,7 +154,7 @@ egcm.default.i1test <- function () {
     egcm.i1tests()[1]
 }
 
-egcm.set.default.i1test("pp")
+# egcm.set.default.i1test("pp")
 
 # The following getter/setter functions are used to control the
 # confidence level (p-value) that is used for the various statistical
@@ -215,8 +215,8 @@ test.egcm <- function(EGCM, test.method=egcm.default.urtest()) {
 	test.method <- match.arg(test.method, egcm.urtests())
     DNAME <- deparse(substitute(EGCM))
 
-    if (test.method %in% c("jo-e", "jo-t", "ers-p", "ers-d", "sp-r")) require(urca)
-    if (test.method == "hurst") require(fArma)
+#    if (test.method %in% c("jo-e", "jo-t", "ers-p", "ers-d", "sp-r")) require(urca)
+#    if (test.method == "hurst") require(fArma)
 	
 	if (is(EGCM, "egcm")) {
 		R <- EGCM$residuals
@@ -284,8 +284,8 @@ egc.residuals.test <- function(R, test.method=setdiff(egcm.urtests(), c("jo-e", 
     DNAME <- deparse(substitute(R))
 	METHOD <- sprintf("Unit root test (%s) of residuals in Engle Granger procedure", test.method)
 
-    if (test.method %in% c("jo-e", "jo-t", "ers-p", "ers-d", "sp-r")) require(urca)
-    if (test.method == "hurst") require(fArma)
+#    if (test.method %in% c("jo-e", "jo-t", "ers-p", "ers-d", "sp-r")) require(urca)
+#    if (test.method == "hurst") require(fArma)
 
 	if (test.method == "adfraw") {
 		adf <- suppressWarnings(adf.test(R, "stationary"))
@@ -379,7 +379,7 @@ egc_test_power_table <- function (test.method=egcm.urtests(),
 	# Constructs a table of power estimates for realistic values of rho
 	test.method <- match.arg(test.method)
 	do.row <- function(nv) sapply(rho, function(r) egc_test_power(test.method, r, nv, nrep, p.value))
-    require(parallel)
+#    require(parallel)
 	pt <- do.call("rbind", mclapply(n, function(nv) do.row(nv)))
 	pt <- as.data.frame(pt)
 	rownames(pt) <- n
@@ -401,7 +401,7 @@ egcm_power_comparison_table <- function (tests=egcm.urtests(), nrep=10000, p.val
 		df
 	}
     
-	require(parallel)
+#	require(parallel)
 	power_tab <- do.call("rbind", mclapply(tests, do_test_method))
 	
 	attr(power_tab, "n") <- n
@@ -478,7 +478,7 @@ egc_quantile_table <- function(test.method=egcm.urtests(),
 	# Calculates a table of quantile values by sample size of the egc.test function
 	# under the assumption rho=1.
 	test.method <- match.arg(test.method)
-    require(parallel)
+#    require(parallel)
 	df <- do.call("cbind", mclapply(n, function(nv) c(nv, egc_quantiles(test.method, nv, nrep, q))))
 	df <- as.data.frame(df)
 	colnames(df) <- n
@@ -490,22 +490,22 @@ egc_quantile_table <- function(test.method=egcm.urtests(),
 ##### Engle Granger Cointegration Model    #####
 ################################################
 
-egcm <- function (X, Y, na.action, log=FALSE, normalize=FALSE, debias=TRUE, robust=FALSE,
+egcm <- function (X, Y, na.action, log=FALSE, normalize=FALSE, debias=TRUE, robust=FALSE, include.const=TRUE,
 	i1test=egcm.default.i1test(), urtest=egcm.default.urtest(), p.value=egcm.default.pvalue()
     ) {
-    # Performs the two-step Engle Granger cointegration analysis on the price
-    # series X and Y, and creates an object representing the results of the
-    # analysis.
-    #  
-    # If X is the price series of the first security and Y is 
-    # the price series of the second, then computes the fit:
-    #
-    #     Y = alpha + beta * X + R
-    #     R_t = rho * R_{t-1} + eps_t
-    #
-    # If log is TRUE, then the price series are logged before the analysis is 
-    # performed.  If Y is missing, then X is presumed to be a two-column
-    # matrix, and X[,1] and X[,2] are used in place of X and Y.
+	# Performs the two-step Engle Granger cointegration analysis on the price
+	# series X and Y, and creates an object representing the results of the
+	# analysis.
+	#  
+	# If X is the price series of the first security and Y is 
+	# the price series of the second, then computes the fit:
+	#
+	#     Y = alpha + beta * X + R
+	#     R_t = rho * R_{t-1} + eps_t
+	#
+	# If log is TRUE, then the price series are logged before the analysis is 
+	# performed.  If Y is missing, then X is presumed to be a two-column
+	# matrix, and X[,1] and X[,2] are used in place of X and Y.
 	
 	if (missing(Y)) {
 		if (is.null(ncol(X)) || (ncol(X) != 2)) {
@@ -565,23 +565,36 @@ egcm <- function (X, Y, na.action, log=FALSE, normalize=FALSE, debias=TRUE, robu
 	S1 <- coredata(S1)
 	S2 <- coredata(S2)
 
-    L <- if(robust) summary(rlm(S2~S1)) else suppressWarnings(summary(lm(S2~S1)))
+    if (robust && include.const) {
+        L <- summary(rlm(S2~S1))
+    	alpha <- coef(L)[1,1]
+    	beta <- coef(L)[2,1]        
+    } else if (robust) {
+        L <- summary(rlm(S2~S1+0))
+    	alpha <- 0
+    	beta <- coef(L)[1,1]       
+    } else if (include.const) {
+        L <- summary(lm(S2~S1))
+    	alpha <- coef(L)[1,1]
+    	beta <- coef(L)[2,1]        
+    } else {
+        L <- summary(lm(S2~S1+0))
+    	alpha <- 0
+    	beta <- coef(L)[1,1]    
+    }
+    
     N <- length(L$residuals)
     R <- L$residuals
     FR <- R[2:N]
     BR <- L$residuals[1:(N-1)]
     if (!robust) {
     	LR <- summary(lm(FR ~ BR + 0))
-    	alpha <- coef(L)[1,1]
-    	beta <- coef(L)[2,1]
     	rho.raw <- coef(LR)[1,1]
     } else {
     	LR <- summary(rlm(FR ~ BR + 0))
-    	alpha <- coef(L)[1]
-    	beta <- coef(L)[2]
     	rho.raw <- coef(LR)[1]
     }        
-	
+
 	if (debias) {
 		rho <- debias_rho(length(FR), rho.raw)
 	} else {
@@ -589,17 +602,22 @@ egcm <- function (X, Y, na.action, log=FALSE, normalize=FALSE, debias=TRUE, robu
 	}
     eps <- FR - rho * BR
 	
-#	alpha.se <- coef(L)[1,2]
-	# The following works well in simulated data, but I am not sure if 
-	# it is correct.  In any event, simply taking the standard error
-	# generated by lm() is clearly incorrect.
-	alpha.se <- sqrt(coef(L)[1,2]^2 + var(eps)/4)
+    if (include.const) {
+        #	alpha.se <- coef(L)[1,2]
+    	# The following works well in simulated data, but I am not sure if 
+    	# it is correct.  In any event, simply taking the standard error
+    	# generated by lm() is clearly incorrect.
+    	alpha.se <- sqrt(coef(L)[1,2]^2 + var(eps)/4)
 	
-	# Engle and Granger show that the convergence of beta is super-consistent,
-	# however simulation shows that the standard errors computed by lm() seem
-	# to be too small.  Perhaps a correction based on the var(eps) needs to
-	# be included here as well?
-	beta.se <- coef(L)[2,2]
+    	# Engle and Granger show that the convergence of beta is super-consistent,
+    	# however simulation shows that the standard errors computed by lm() seem
+    	# to be too small.  Perhaps a correction based on the var(eps) needs to
+    	# be included here as well?
+    	beta.se <- coef(L)[2,2]
+    } else {
+        alpha.se <- 0
+        beta.se <- coef(L)[1,2]
+    }
 	
 	rho.se <- coef(LR)[1,2]
 #	rho.se <- rho_se(length(eps), rho) * sd(R)
@@ -1222,7 +1240,7 @@ coint_bias_table <- function (sample_size=c(60, 125, 250, 500, 750, 1000),
 		sm
 	}
 	if (debug) debug(sample_summary)
-	require(parallel)
+#	require(parallel)
 	ssfunc <- function(ss) {
 		data <- do.call("rbind", mclapply(1:nsamples, function(i) do_rep(ss)))
 		sample_summary(data, ss)			

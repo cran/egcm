@@ -11,7 +11,7 @@ series, and creates an object representing the results of the analysis.
 }
 \usage{
 egcm(X, Y, na.action, log = FALSE, normalize = FALSE, 
-  debias = TRUE, robust=FALSE,
+  debias = TRUE, robust=FALSE, include.const=TRUE,
   i1test = egcm.default.i1test(), 
   urtest = egcm.default.urtest(), 
   p.value = egcm.default.pvalue())
@@ -54,6 +54,11 @@ is.ar1(E)
   Engle-Granger procedure should be performed using a robust linear
   model rather than a standard linear model.  See \code{\link{rlm}}.
   Default: FALSE.
+}
+  \item{include.const}{
+  a boolean which if \code{TRUE}, indicates that the constant term \eqn{alpha}
+  should be included in the model.  Otherwise, sets \eqn{alpha=0}.
+  Default:  TRUE.
 }
   \item{i1test}{
   a mnemonic indicating the name of the test that should be used for
@@ -105,7 +110,7 @@ fit to the following model:
 
 \deqn{Y[i] = \alpha + \beta * X[i] + R[i]}
 \deqn{R[i] = \rho * R[i-1] + \epsilon[i]}
-\deqn{\epsilon[i] ~ N(0, \sigma^2)}
+\deqn{\epsilon[i] \sim N(0, \sigma^2)}
 
 In the first step, \eqn{alpha} and \eqn{beta} are found using
 a linear fit of \code{X[i]} with respect to \code{Y[i]}.  The 
@@ -194,9 +199,10 @@ Returns an S3 object of class \code{"egcm"}.  This can then be
 The following is a copy of the printed output that was obtained from 
 running the first example below:
 \preformatted{
-VOO[i] =   0.9201 SPY[i] -   0.6845 + R[i], R[i] =  -0.0004 R[i-1] + eps[i], eps ~ N(0,  0.0779^2)
-          (0.0005)          (0.0845)                (0.0633)
-
+VOO[i] =   0.9201 SPY[i] -   0.6845 + R[i], 
+          (0.0005)          (0.0845)     
+R[i] =  -0.0004 R[i-1] + eps[i], eps ~ N(0,  0.0779^2)
+        (0.0633)
 R[2013-12-31] = -0.0987 (t = -1.265)}
 
 The first line of the output shows the fit that was found.  
@@ -258,9 +264,8 @@ The fields of the \code{"egcm"} object are as follows:
    \emph{Algorithmic trading: winning strategies and their rationale}.
    (Vol. 625). John Wiley & Sons.
 
-  Clegg, M. (2014).
-  On the Persistence of Cointegration in Pairs Trading,
-  \emph{in preparation}.
+  Clegg, M. (2014). On the Persistence of Cointegration in Pairs Trading (January 28, 2014). 
+  Available at SSRN:  http://ssrn.com/abstract=2491201
 
   Ehrman, D.S. (2006).
   \emph{The handbook of pairs trading: strategies using equities, options, 
@@ -306,7 +311,7 @@ The fields of the \code{"egcm"} object are as follows:
 }
 \examples{
 \donttest{
-library(ttr)
+library(TTR)
 
 # SPY and IVV are both ETF's that track the S&P 500.
 # One would expect them to be cointegrated, and in 2013 they were.
