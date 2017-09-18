@@ -89,7 +89,7 @@ egcm.urtests.internal <- c(
 	"ers-p",	 # Elliott, Rothenberg and Stock point optimal test (ur.ers{urca})
 	"ers-d",     # Elliott, Rothenberg and Stock DF-GLS test (ur.ers{urca})
 	"sp-r",      # Schmidt and Phillips rho statistics (ur.sp{urca})
-	"hurst",     # Hurst exponent (aggvarFit{fArma})
+	"hurst",     # Hurst exponent (hurstexp{pracma})
 	"bvr",       # Breitung's variance ratio
 	"pgff"       # Pantula, Gonzales-Farias and Fuller Rho statistic 
 )
@@ -102,9 +102,6 @@ egcm.set.default.urtest <- function (urtest) {
 		stop ("No such unit root test: ", urtest)
 	}
     
-#    if (urtest %in% c("jo-e", "jo-t", "ers-p", "ers-d", "sp-r")) require(urca)
-#    if (urtest == "hurst") require(fArma)
-
 	urtests.list <<- c(urtest, setdiff(egcm.urtests.internal, urtest))
     assign("urtest.default", urtests.list, envir=egcm.env)
 }
@@ -201,7 +198,7 @@ test.egcm <- function(EGCM, test.method=egcm.default.urtest()) {
 	#     ers-d: DF-GLS test of Elliott, Rothenberg and Stock as implemented by ur.ers{urca}.
 	#     sp-r:  Rho statistic from Schmidt and Phillips, as implemented by ur.sp{urca}.
 	#     bvr:   Breitung's variance ratio test.
-	#     hurst: Hurst exponent as calculated by aggvarFit{fArma}.
+	#     hurst: Hurst exponent as calculated by hurstexp{pracma}.
 	#
 	# EGCM can either be an egcm object returned by egcm(), or it can be a two-column
 	# matrix.  In the latter case, a regression is performed of the first column on the
@@ -214,9 +211,6 @@ test.egcm <- function(EGCM, test.method=egcm.default.urtest()) {
 
 	test.method <- match.arg(test.method, egcm.urtests())
     DNAME <- deparse(substitute(EGCM))
-
-#    if (test.method %in% c("jo-e", "jo-t", "ers-p", "ers-d", "sp-r")) require(urca)
-#    if (test.method == "hurst") require(fArma)
 	
 	if (is(EGCM, "egcm")) {
 		R <- EGCM$residuals
@@ -230,17 +224,27 @@ test.egcm <- function(EGCM, test.method=egcm.default.urtest()) {
 	
 	if (test.method %in% c("jo-e", "jo-t")) {
 		if (test.method == "jo-e") {
-			jo <- ca.jo(provideDimnames(X), type="eigen", ecdet="const")
-			STAT <- -jo@teststat[2]
+			jo <- try(ca.jo(provideDimnames(X), type="eigen", ecdet="const"))
+			if (class(jo) == "try-error" || is.na(jo@teststat[2])) {
+			  STAT <- NA
+			  PVAL <- NA
+			} else {
+			  STAT <- -jo@teststat[2]
+			  PVAL <- quantile_table_interpolate(egc_joe_qtab, length(R), STAT)
+			}
 			names(STAT) <- "lambda_max"
-			PVAL <- quantile_table_interpolate(egc_joe_qtab, length(R), STAT)
-			URTEST <- jo@test.name		
+			URTEST <- "Johansen-Procedure"		
 		} else if (test.method == "jo-t") {
-			jo <- ca.jo(provideDimnames(X), type="trace", ecdet="const")
-			STAT <- -jo@teststat[2]
+			jo <- try(ca.jo(provideDimnames(X), type="trace", ecdet="const"))
+			if (class(jo) == "try-error" || is.na(jo@teststat[2])) {
+			  STAT <- NA
+			  PVAL <- NA
+			} else {
+			  STAT <- -jo@teststat[2]
+			  PVAL <- quantile_table_interpolate(egc_jot_qtab, length(R), STAT)
+			}
 			names(STAT) <- "trace"
-			PVAL <- quantile_table_interpolate(egc_jot_qtab, length(R), STAT)
-			URTEST <- jo@test.name		
+			URTEST <- "Johansen-Procedure"		
 		}
 	    htest <- structure(list(statistic = STAT, alternative = "cointegrated", 
 	        p.value = PVAL, method = "", urtest = URTEST, data.name = DNAME), 
@@ -271,7 +275,7 @@ egc.residuals.test <- function(R, test.method=setdiff(egcm.urtests(), c("jo-e", 
 	#     ers-d: DF-GLS test of Elliott, Rothenberg and Stock as implemented by ur.ers{urca}.
 	#     sp-r:  Rho statistic from Schmidt and Phillips, as implemented by ur.sp{urca}.
 	#     bvr:   Breitung's variance ratio test.
-	#     hurst: Hurst exponent as calculated by aggvarFit{fArma}.
+	#     hurst: Hurst exponent as calculated by hurstexp{pracma}.
 	#
 	# Returns an object of type htest representing the results of the hypothesis test.
 	# In all cases, a low p.value is interpreted as evidence that the null hypothesis
@@ -284,29 +288,30 @@ egc.residuals.test <- function(R, test.method=setdiff(egcm.urtests(), c("jo-e", 
     DNAME <- deparse(substitute(R))
 	METHOD <- sprintf("Unit root test (%s) of residuals in Engle Granger procedure", test.method)
 
-#    if (test.method %in% c("jo-e", "jo-t", "ers-p", "ers-d", "sp-r")) require(urca)
-#    if (test.method == "hurst") require(fArma)
-
 	if (test.method == "adfraw") {
 		adf <- suppressWarnings(adf.test(R, "stationary"))
 		STAT <- adf$statistic
 		PVAL <- adf$p.value
 		URTEST <- adf$method
 	} else if (test.method == "adf") {
-		adf <- suppressWarnings(adf.test(R, "stationary"))
-		STAT <- adf$statistic
+#		adf <- suppressWarnings(adf.test(R, "stationary"))
+#		STAT <- adf$statistic
+	  adf <- suppressWarnings(ur.df(R, type="none", lags=trunc((length(R)-1)^(1/3))))
+	  STAT <- adf@teststat
 		PVAL <- quantile_table_interpolate(egc_adf_qtab, length(R), STAT)
-		URTEST <- adf$method
+		URTEST <- "Augmented Dickey-Fuller Unit Root Test"
 	} else if (test.method == "pgff") {
-		STAT <- pgff_rho_ws (R, detrend=TRUE)
+		STAT <- pgff_rho_ws (R, detrend=FALSE)
 		names(STAT) <- "rho_ws"
 		PVAL <- quantile_table_interpolate(egc_pgff_qtab, length(R), STAT)
 	    URTEST <- "Pantula, Gonzales-Farias and Fuller Unit Root Test"	
 	} else if (test.method == "pp") {
-		pp <- suppressWarnings(pp.test(R))
-		STAT <- pp$statistic
+#		pp <- suppressWarnings(pp.test(R))
+#		STAT <- pp$statistic
+	  pp <- suppressWarnings(ur.pp(R, type="Z-alpha", model="constant"))
+	  STAT <- pp@teststat
 		PVAL <- quantile_table_interpolate(egc_pp_qtab, length(R), STAT)
-		URTEST <- pp$method	
+		URTEST <- "Phillips-Perron Unit Root Test"
 	} else if (test.method == "ers-p") {
 		ers <- ur.ers(R, type="P-test", model="constant")
 		STAT <- ers@teststat
@@ -331,11 +336,10 @@ egc.residuals.test <- function(R, test.method=setdiff(egcm.urtests(), c("jo-e", 
 		PVAL <- quantile_table_interpolate(egc_bvr_qtab, length(R), STAT)
 		URTEST <- "Breitung Variance Ratio Test"
 	} else if (test.method == "hurst") {
-		h <- aggvarFit(R)
-		STAT <- h@hurst$H
+		STAT <- hurstexp(R, display=FALSE)$Hal
 		names(STAT) <- "H"
 		PVAL <- quantile_table_interpolate(egc_hurst_qtab, length(R), STAT)
-		URTEST <- h@title	
+		URTEST <- "Corrected empirical hurst exponent.  See pracma::hurstexp"	
 	} else {
 		stop ("Unit root test.method ", test.method, " not implemented")
 	}
@@ -479,7 +483,7 @@ egc_quantile_table <- function(test.method=egcm.urtests(),
 	# under the assumption rho=1.
 	test.method <- match.arg(test.method)
 #    require(parallel)
-	df <- do.call("cbind", mclapply(n, function(nv) c(nv, egc_quantiles(test.method, nv, nrep, q))))
+	df <- do.call("cbind", lapply(n, function(nv) c(nv, egc_quantiles(test.method, nv, nrep, q))))
 	df <- as.data.frame(df)
 	colnames(df) <- n
 	df <- cbind(data.frame(quantile=c(NA,q)), df) 
@@ -702,10 +706,14 @@ print.egcm <- function (x, ...) {
         E$residuals[N]/sd(E$residuals)))
     
     warnings <- c()
-    if (E$s1.i1.p < E$pvalue) {
+    if (is.na(E$s1.i1.p)) {
+        warnings <- c(warnings, sprintf("I(1) test for %s returned NA.", E$series_names[1]))
+    } else if (E$s1.i1.p < E$pvalue) {
         warnings <- c(warnings, sprintf("%s does not seem to be integrated.", E$series_names[1]))
     } 
-    if (E$s2.i1.p < E$pvalue) {
+    if (is.na(E$s2.i1.p)) {
+        warnings <- c(warnings, sprintf("I(1) test for %s returned NA.", E$series_names[2]))
+    } else if (E$s2.i1.p < E$pvalue) {
         warnings <- c(warnings, sprintf("%s does not seem to be integrated.", E$series_names[2]))
     } 
     if (!is.cointegrated(E)) {
@@ -957,6 +965,8 @@ is.cointegrated <- function (E) {
 		stop("Parameter E must be of type egcm")
 	}
 
+  if (is.na(E$s1.i1.p) || is.na(E$s2.i1.p) || is.na(E$r.p)) return (FALSE)
+  
 	S1.I1 <- E$s1.i1.p > E$pvalue
 	S2.I1 <- E$s2.i1.p > E$pvalue
 	R.I0 <- E$r.p < E$pvalue
